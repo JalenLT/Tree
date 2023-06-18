@@ -169,7 +169,7 @@ for (let i = 0; i < treePoints.branchNumber; i++) {
         }
         
         if(i == 0){
-            let w = lineWidth * (1 - (treePoints["highestY"] / treePoints.branches["branch_" + (i + 1)][r][1]));
+            let w = lineWidth * (1 - ((r + 1) / treePoints.branches["branch_" + (i + 1)].length));
             treePoints["lineWidths"].push([treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], w]);
             ctx.lineWidth = w;
         }else{
