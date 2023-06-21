@@ -12,6 +12,7 @@ var splitChance = 30;
 var treeNumbers = 1;
 var treePoints = {
     "branches" : {},
+    "leaves": [],
     "lineWidths": [],
     "branchNumber": 0,
     "completeBranches": 0,
@@ -21,6 +22,25 @@ var treePoints = {
 function getRandomGreen() {
     let green = Math.floor(Math.random() * 256);
     return 'rgb(0,' + green + ',0)';
+}
+function getPerpendicularPoint(startPoint, endPoint, distance) {
+    // Generate a random point between the start and end points
+    var randomPoint = [Math.random() * (endPoint[0] - startPoint[0]) + startPoint[0], Math.random() * (endPoint[1] - startPoint[1]) + startPoint[1]];
+
+    // Calculate the direction vector of the line formed by the start and end points
+    var directionVector = [endPoint[0] - startPoint[0], endPoint[1] - startPoint[1]];
+
+    // Normalize the direction vector
+    var magnitude = Math.sqrt(directionVector[0] ** 2 + directionVector[1] ** 2);
+    var normalizedDirection = [directionVector[0] / magnitude, directionVector[1] / magnitude];
+
+    // Calculate the perpendicular vector
+    var perpendicularVector = [normalizedDirection[1], -normalizedDirection[0]];
+
+    // Calculate the perpendicular point by offsetting from the random point
+    var perpendicularPoint = [randomPoint[0] + perpendicularVector[0] * distance, randomPoint[1] + perpendicularVector[1] * distance];
+
+    return perpendicularPoint;
 }
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
@@ -115,6 +135,17 @@ function addOnBranch(treePoints, branchIndex, length, angle){
     }
     treePoints.branches[branchIndex].push(nextPoint);
 }
+function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves = 10, maxLeaves = 15){
+    var totalLeaves = Math.floor(getRandomArbitrary(minLeaves, maxLeaves));
+    for (let i = 0; i < totalLeaves; i++) {
+        let start = [currentPoint[0] + getRandomArbitrary(-1 * 40, 40), currentPoint[1] + getRandomArbitrary(-1 * 40, 40)];
+        let end = getNextPoint(canvas, start, 30, angle * 2);
+        let control1 = getPerpendicularPoint(start, end, distance);
+        let control2 = getPerpendicularPoint(start, end, -1 * distance);
+        let middle = getPerpendicularPoint(start, end, 0.1);
+        treePoints.leaves.push([start, end, control1, control2, middle]);
+    }
+}
 
 addBranch(treePoints);
 //CREATE POINTS FOR TREE BASE
@@ -133,6 +164,9 @@ for (let i = 0; i < currentBranchNumber; i++) {
     var splitCount = Math.floor(getRandomArbitrary(1, mainPoints / 2));
     if(i + 1 != 1){
         for (let r = 0; r < splitCount; r++) {
+            //ADD LEAVES
+            addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], mainLength / 8, mainAngle, 5);
+
             addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.6, mainAngle * 1.5);
             var branchChance = Math.floor(getRandomArbitrary(1, 100));
             if(branchChance > (100 - splitChance)){
@@ -187,47 +221,29 @@ for (let i = 0; i < treePoints.branchNumber; i++) {
         
         ctx.stroke();
     }
-    // treePoints.branches["branch_" + (i + 1)].forEach((element, i) => {
-    //     if(i == 0){
-    //         ctx.moveTo(element[0], element[1]);
-    //     }else{
-    //         ctx.lineTo(element[0], element[1]);
-    //     }
-    // });
+}
+//DRAW LEAVES
+for (let i = 0; i < treePoints.leaves.length; i++) {
+    let leaf = treePoints.leaves[i];
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(leaf[0][0], leaf[0][1]);
+    ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
+    ctx.stroke();
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(leaf[0][0], leaf[0][1]);
+    ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
+    ctx.stroke();
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "White";
+    ctx.beginPath();
+    ctx.moveTo(leaf[0][0], leaf[0][1]);
+    ctx.quadraticCurveTo(leaf[4][0], leaf[4][1], leaf[1][0], leaf[1][1]);
+    ctx.stroke();
+    ctx.strokeStyle = "Black";
 }
 
 console.log(treePoints);
-
-//DRAW PERPENDICULAR LINE
-// var slope_ab = (treePoints.branches.branch_1[8][1] - treePoints.branches.branch_1[7][1]) / (treePoints.branches.branch_1[8][0] - treePoints.branches.branch_1[7][0]);
-// var slope_perpendicular = -1 / slope_ab;
-// var x3 = treePoints.branches.branch_1[7][0] + 5;
-// var y3 = treePoints.branches.branch_1[7][1] + slope_perpendicular * (x3 - treePoints.branches.branch_1[7][0]);
-// var x4 = treePoints.branches.branch_1[7][0] + 15;
-// var y4 = treePoints.branches.branch_1[7][1] + slope_perpendicular * (x4 - treePoints.branches.branch_1[7][0]);
-// console.log(slope_ab);
-// console.log(slope_perpendicular);
-// ctx.beginPath();
-// ctx.strokeStyle = "Blue";
-// ctx.moveTo(x3, y3);
-// ctx.lineTo(x4, y4);
-// ctx.stroke();
-// ctx.beginPath();
-// ctx.strokeStyle = "Green";
-// ctx.moveTo(treePoints.branches.branch_1[7][0], treePoints.branches.branch_1[7][1]);
-// ctx.lineTo(treePoints.branches.branch_1[8][0], treePoints.branches.branch_1[8][1]);
-// ctx.stroke();
-
-// var startPoint = { 0: 50, 1: 50 };
-// var endPoint = { 0: 200, 1: 200 };
-
-// var controlPoints = getControlPoints(startPoint, endPoint);
-
-// ctx.beginPath();
-// ctx.moveTo(startPoint[0], startPoint[1]);
-// ctx.bezierCurveTo(
-//   controlPoints[0][0], controlPoints[0][1],
-//   controlPoints[1][0], controlPoints[1][1],
-//   endPoint[0], endPoint[1]
-// );
-// ctx.stroke();
