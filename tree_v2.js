@@ -238,12 +238,6 @@ for (let i = 0; i < treePoints.leaves.length; i++) {
     ctx.stroke();
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = "White";
-    ctx.beginPath();
-    ctx.moveTo(leaf[0][0], leaf[0][1]);
-    ctx.quadraticCurveTo(leaf[4][0], leaf[4][1], leaf[1][0], leaf[1][1]);
-    ctx.stroke();
-    ctx.strokeStyle = "Black";
 }
 
 console.log(treePoints);
