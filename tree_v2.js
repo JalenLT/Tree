@@ -9,7 +9,7 @@ var mainLength = 100;
 var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
-var treeNumbers = 1;
+var treeNumbers = 3;
 var treePoints = {
     "branches" : {},
     "leaves": [],
@@ -75,7 +75,7 @@ function distanceBetweenPoints(point1, point2){
     return Math.sqrt(Math.pow((point2[0] - point1[0]), 2) + Math.pow((point2[1] - point1[1]), 2));
 }
 function getBase(canvas){
-    return [parseInt(canvas.width / 2), canvas.height];
+    return [Math.floor(getRandomArbitrary(1, canvas.width)), canvas.height];
 }
 function getNextPoint(canvas, currentPoint, maxLength, maxAngle, hasScaler = true){
     var length = maxLength;
@@ -135,7 +135,7 @@ function addOnBranch(treePoints, branchIndex, length, angle){
     }
     treePoints.branches[branchIndex].push(nextPoint);
 }
-function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves = 10, maxLeaves = 15){
+function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves = 5, maxLeaves = 15){
     var totalLeaves = Math.floor(getRandomArbitrary(minLeaves, maxLeaves));
     for (let i = 0; i < totalLeaves; i++) {
         let start = [currentPoint[0] + getRandomArbitrary(-1 * 40, 40), currentPoint[1] + getRandomArbitrary(-1 * 40, 40)];
@@ -147,97 +147,122 @@ function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves 
     }
 }
 
-addBranch(treePoints);
-//CREATE POINTS FOR TREE BASE
-for (let i = 0; i < mainPoints; i++) {
-    addOnBranch(treePoints, "branch_1", mainLength, mainAngle);
+function drawTree(){
+    treePoints = {
+        "branches" : {},
+        "leaves": [],
+        "lineWidths": [],
+        "branchNumber": 0,
+        "completeBranches": 0,
+        "highestY": 99999
+    };
+    mainPoints = Math.floor(getRandomArbitrary(20, 50));
 
-    var branchChance = Math.floor(getRandomArbitrary(1, 100));
-    if((i / mainPoints) > 0.25 && branchChance > (100 - splitChance)){
-        addBranch(treePoints, false, treePoints.branches.branch_1[treePoints.branches.branch_1.length - 1]);
-    }
-}
-treePoints.completeBranches += 1;
-//BUILD FIRST BRANCH SPLIT
-var currentBranchNumber = treePoints.branchNumber - 1;
-for (let i = 0; i < currentBranchNumber; i++) {
-    var splitCount = Math.floor(getRandomArbitrary(1, mainPoints / 2));
-    if(i + 1 != 1){
-        for (let r = 0; r < splitCount; r++) {
+    addBranch(treePoints);
+    //CREATE POINTS FOR TREE BASE
+    var branchHeight = getRandomArbitrary(0.1, 0.4);
+    for (let i = 0; i < mainPoints; i++) {
+        addOnBranch(treePoints, "branch_1", mainLength, mainAngle);
+        
+        var branchChance = Math.floor(getRandomArbitrary(1, 100));
+        if((i / mainPoints) > branchHeight && branchChance > (100 - splitChance)){
+            addBranch(treePoints, false, treePoints.branches.branch_1[treePoints.branches.branch_1.length - 1]);
+        }
+        if((i / mainPoints) > branchHeight){
             //ADD LEAVES
-            addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], mainLength / 8, mainAngle, 5);
-
-            addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.6, mainAngle * 1.5);
-            var branchChance = Math.floor(getRandomArbitrary(1, 100));
-            if(branchChance > (100 - splitChance)){
-                addBranch(treePoints, false, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1]);
-            }
+            addLeaves(treePoints, treePoints.branches["branch_1"][treePoints.branches["branch_1"].length - 1], mainLength / 8, mainAngle, 5);
         }
     }
     treePoints.completeBranches += 1;
-}
-//BUILD SECOND BRANCH SPLIT
-for (let i = treePoints.completeBranches; i < treePoints.branchNumber; i++) {
-    for (let r = 0; r < splitCount; r++) {
-        addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.3, mainAngle * 2);
-        var branchChance = Math.floor(getRandomArbitrary(1, 100));
-    }
-}
-treePoints.completeBranches = treePoints.branchNumber;
-//DRAW TREE PATH
-for (let i = 0; i < treePoints.branchNumber; i++) {
-    let currentBranchWidth = 0;
-    for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
-        ctx.beginPath();
-        if(r == 0){
-            ctx.moveTo(treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1]);
-        }else{
-            ctx.moveTo(treePoints.branches["branch_" + (i + 1)][r - 1][0], treePoints.branches["branch_" + (i + 1)][r - 1][1]);
-            let controlPoints = getControlPoints(treePoints.branches["branch_" + (i + 1)][r - 1], treePoints.branches["branch_" + (i + 1)][r]);
-            ctx.bezierCurveTo(
-                controlPoints[0][0], controlPoints[0][1],
-                controlPoints[1][0], controlPoints[1][1],
-                treePoints.branches["branch_" + (i + 1)][r][0], 
-                treePoints.branches["branch_" + (i + 1)][r][1]
-            );
-        }
-        
-        if(i == 0){
-            let w = lineWidth * (1 - ((r + 1) / treePoints.branches["branch_" + (i + 1)].length));
-            treePoints["lineWidths"].push([treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], w]);
-            ctx.lineWidth = w;
-        }else{
-            if(r == 0){
-                treePoints["lineWidths"].forEach(element => {
-                    if(treePoints.branches["branch_" + (i + 1)][r][0] == element[0] && treePoints.branches["branch_" + (i + 1)][r][1] == element[1]){
-                        currentBranchWidth = element[2];
-                    }
-                });
+    //BUILD FIRST BRANCH SPLIT
+    var currentBranchNumber = treePoints.branchNumber - 1;
+    for (let i = 0; i < currentBranchNumber; i++) {
+        var splitCount = Math.floor(getRandomArbitrary(1, mainPoints / 2));
+        if(i + 1 != 1){
+            for (let r = 0; r < splitCount; r++) {
+                //ADD LEAVES
+                addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], mainLength / 8, mainAngle, 5);
+    
+                addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.6, mainAngle * 1.5);
+                var branchChance = Math.floor(getRandomArbitrary(1, 100));
+                if(branchChance > (100 - splitChance)){
+                    addBranch(treePoints, false, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1]);
+                }
             }
-            let w = currentBranchWidth * (1 - ((r + 1) / treePoints.branches["branch_" + (i + 1)].length));
-            treePoints["lineWidths"].push([treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], w]);
-            ctx.lineWidth = w;
         }
-        
-        ctx.stroke();
+        treePoints.completeBranches += 1;
     }
-}
-//DRAW LEAVES
-for (let i = 0; i < treePoints.leaves.length; i++) {
-    let leaf = treePoints.leaves[i];
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(leaf[0][0], leaf[0][1]);
-    ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
-    ctx.stroke();
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(leaf[0][0], leaf[0][1]);
-    ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
-    ctx.stroke();
-    ctx.closePath();
-    ctx.fill();
+    //BUILD SECOND BRANCH SPLIT
+    for (let i = treePoints.completeBranches; i < treePoints.branchNumber; i++) {
+        for (let r = 0; r < splitCount; r++) {
+            //ADD LEAVES
+            addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], mainLength / 8, mainAngle, 5);
+            
+            addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.3, mainAngle * 2);
+            var branchChance = Math.floor(getRandomArbitrary(1, 100));
+        }
+    }
+    treePoints.completeBranches = treePoints.branchNumber;
+    //DRAW TREE PATH
+    for (let i = 0; i < treePoints.branchNumber; i++) {
+        // ctx.strokeStyle = "#2a1705";
+        let currentBranchWidth = 0;
+        for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
+            ctx.beginPath();
+            if(r == 0){
+                ctx.moveTo(treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1]);
+            }else{
+                ctx.moveTo(treePoints.branches["branch_" + (i + 1)][r - 1][0], treePoints.branches["branch_" + (i + 1)][r - 1][1]);
+                let controlPoints = getControlPoints(treePoints.branches["branch_" + (i + 1)][r - 1], treePoints.branches["branch_" + (i + 1)][r]);
+                ctx.bezierCurveTo(
+                    controlPoints[0][0], controlPoints[0][1],
+                    controlPoints[1][0], controlPoints[1][1],
+                    treePoints.branches["branch_" + (i + 1)][r][0], 
+                    treePoints.branches["branch_" + (i + 1)][r][1]
+                );
+            }
+            
+            if(i == 0){
+                let w = lineWidth * (1 - ((r + 1) / treePoints.branches["branch_" + (i + 1)].length));
+                treePoints["lineWidths"].push([treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], w]);
+                ctx.lineWidth = w;
+            }else{
+                if(r == 0){
+                    treePoints["lineWidths"].forEach(element => {
+                        if(treePoints.branches["branch_" + (i + 1)][r][0] == element[0] && treePoints.branches["branch_" + (i + 1)][r][1] == element[1]){
+                            currentBranchWidth = element[2];
+                        }
+                    });
+                }
+                let w = currentBranchWidth * (1 - ((r + 1) / treePoints.branches["branch_" + (i + 1)].length));
+                treePoints["lineWidths"].push([treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], w]);
+                ctx.lineWidth = w;
+            }
+            
+            ctx.stroke();
+        }
+    }
+    //DRAW LEAVES
+    for (let i = 0; i < treePoints.leaves.length; i++) {
+        // ctx.strokeStyle = "#11551e";
+        // ctx.fillStyle = "#11551e";
+        let leaf = treePoints.leaves[i];
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(leaf[0][0], leaf[0][1]);
+        ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(leaf[0][0], leaf[0][1]);
+        ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
-console.log(treePoints);
+for (let i = 0; i < treeNumbers; i++) {
+    drawTree();
+}
