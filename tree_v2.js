@@ -1,5 +1,6 @@
 //GET HTML ELEMENTS
 const canvas = document.getElementsByName("tree")[0];
+canvas.width = window.innerWidth;
 const ctx = canvas.getContext("2d");
 ctx.lineCap = "round";
 // ctx.lineJoin = "round";
@@ -9,7 +10,7 @@ var mainLength = 100;
 var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
-var treeNumbers = 3;
+var treeNumbers = Math.floor(getRandomArbitrary(1, 6));
 var treePoints = {
     "branches" : {},
     "leaves": [],
@@ -146,6 +147,21 @@ function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves 
         treePoints.leaves.push([start, end, control1, control2, middle]);
     }
 }
+function addGrass(canvas, length, angle){
+    ctx.lineWidth = 1;
+    var startPoint = getBase(canvas);
+    length += getRandomArbitrary(5, 15);
+    var endPoint = getNextPoint(canvas, startPoint, length, angle, false);
+    var controlPoints = getControlPoints(startPoint, endPoint, 30);
+    ctx.moveTo(startPoint[0], startPoint[1]);
+    ctx.bezierCurveTo(
+        controlPoints[0][0], controlPoints[0][1],
+        controlPoints[1][0], controlPoints[1][1],
+        endPoint[0], 
+        endPoint[1]
+    );
+    ctx.stroke();
+}
 
 function drawTree(){
     treePoints = {
@@ -265,4 +281,7 @@ function drawTree(){
 
 for (let i = 0; i < treeNumbers; i++) {
     drawTree();
+}
+for (let i = 0; i < Math.floor(getRandomArbitrary(400, 1000)); i++) {
+    addGrass(canvas, Math.floor(getRandomArbitrary(1, 50)), 120);
 }
