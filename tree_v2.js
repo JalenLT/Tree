@@ -11,6 +11,7 @@ var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
 var treeNumbers = Math.floor(getRandomArbitrary(1, 6));
+var trees = [];
 var treePoints = {
     "branches" : {},
     "leaves": [],
@@ -78,23 +79,27 @@ function distanceBetweenPoints(point1, point2){
 function getBase(canvas){
     return [Math.floor(getRandomArbitrary(1, canvas.width)), canvas.height];
 }
-function getNextPoint(canvas, currentPoint, maxLength, maxAngle, hasScaler = true){
+function getNextPoint(canvas, currentPoint, maxLength, maxAngle, hasScaler = true, up = false){
     var length = maxLength;
     var scaler = 1 - (currentPoint[1] / canvas.height);
     var angle = getRandomArbitrary(-1 * (maxAngle / 3), maxAngle);
     var direction = Math.random();
-    if(direction <= 0.5){
-        if(hasScaler){
-            var x = currentPoint[0] + ((length * Math.cos((angle * (Math.PI / 180) - (180 * (Math.PI / 180))))) * scaler);
+    if(!up){
+        if(direction <= 0.5){
+            if(hasScaler){
+                var x = currentPoint[0] + ((length * Math.cos((angle * (Math.PI / 180) - (180 * (Math.PI / 180))))) * scaler);
+            }else{
+                var x = currentPoint[0] + ((length * Math.cos((angle * (Math.PI / 180) - (180 * (Math.PI / 180))))));
+            }
         }else{
-            var x = currentPoint[0] + ((length * Math.cos((angle * (Math.PI / 180) - (180 * (Math.PI / 180))))));
+            if(hasScaler){
+                var x = currentPoint[0] + ((length * Math.cos(angle * (Math.PI / 180))) * scaler);
+            }else{
+                var x = currentPoint[0] + ((length * Math.cos(angle * (Math.PI / 180))));
+            }
         }
     }else{
-        if(hasScaler){
-            var x = currentPoint[0] + ((length * Math.cos(angle * (Math.PI / 180))) * scaler);
-        }else{
-            var x = currentPoint[0] + ((length * Math.cos(angle * (Math.PI / 180))));
-        }
+        var x = currentPoint[0] + ((length * Math.cos((angle * (Math.PI / 180) - (300 * (Math.PI / 180))))));
     }
     var y = currentPoint[1] - (length * Math.sin(angle * (Math.PI / 180)));
     return [x, y];
@@ -149,18 +154,25 @@ function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves 
 }
 function addGrass(canvas, length, angle){
     ctx.lineWidth = 1;
-    var startPoint = getBase(canvas);
-    length += getRandomArbitrary(5, 15);
-    var endPoint = getNextPoint(canvas, startPoint, length, angle, false);
-    var controlPoints = getControlPoints(startPoint, endPoint, 30);
-    ctx.moveTo(startPoint[0], startPoint[1]);
+    if(0.8 < Math.random()){
+        var startPoint1 = [trees[Math.floor(getRandomArbitrary(0, trees.length - 1))]["branches"]["branch_1"][0][0] + getRandomArbitrary(-100, 100), trees[Math.floor(getRandomArbitrary(0, trees.length - 1))]["branches"]["branch_1"][0][1]];
+    }else{
+        var startPoint1 = getBase(canvas);
+    }
+    var startPoint2 = [startPoint1[0] + getRandomArbitrary(1, 3), startPoint1[1]];
+    length += getRandomArbitrary(5, 35);
+    var endPoint = getNextPoint(canvas, startPoint1, length, angle, false, true);
+    var controlPoints = getControlPoints(startPoint1, endPoint, 10);
+    ctx.beginPath();
+    ctx.moveTo(startPoint1[0], startPoint1[1]);
     ctx.bezierCurveTo(
         controlPoints[0][0], controlPoints[0][1],
         controlPoints[1][0], controlPoints[1][1],
-        endPoint[0], 
-        endPoint[1]
+        startPoint2[0], 
+        startPoint2[1]
     );
     ctx.stroke();
+    ctx.fill();
 }
 
 function drawTree(){
@@ -277,11 +289,15 @@ function drawTree(){
         ctx.closePath();
         ctx.fill();
     }
+
+    trees.push(treePoints);
 }
 
 for (let i = 0; i < treeNumbers; i++) {
     drawTree();
 }
-for (let i = 0; i < Math.floor(getRandomArbitrary(400, 1000)); i++) {
-    addGrass(canvas, Math.floor(getRandomArbitrary(1, 50)), 120);
+for (let i = 0; i < Math.floor(getRandomArbitrary(200, 500)); i++) {
+    addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
 }
+
+console.log(trees);
