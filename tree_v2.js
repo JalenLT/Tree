@@ -1,7 +1,7 @@
 //GET HTML ELEMENTS
 const canvas = document.getElementsByName("tree")[0];
-canvas.width = window.innerWidth;
-const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth * 0.75;
+const ctx = canvas.getContext("2d", {willReadFrequently: true});
 ctx.lineCap = "round";
 // ctx.lineJoin = "round";
 var lineWidth = 30;
@@ -10,7 +10,8 @@ var mainLength = 100;
 var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
-var treeNumbers = Math.floor(getRandomArbitrary(1, 6));
+var pixelSize = 5;
+var treeNumbers = Math.floor(getRandomArbitrary(1, 2));
 var trees = [];
 var treePoints = {
     "branches" : {},
@@ -47,6 +48,14 @@ function getPerpendicularPoint(startPoint, endPoint, distance) {
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
+// Get the color of a specific coordinate
+function getColorAtCoordinate(x, y) {
+    // Get the image data of the canvas
+    const imageData = ctx.getImageData(x, y, 1, 1);
+    const data = imageData.data;
+    // Return the color as an RGB string
+    return data;
+  }
 function getControlPoints(startPoint, endPoint, curvature = 10) {
     // Calculate the mid-point
     var midPoint = {
@@ -142,6 +151,7 @@ function addOnBranch(treePoints, branchIndex, length, angle){
     treePoints.branches[branchIndex].push(nextPoint);
 }
 function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves = 5, maxLeaves = 15){
+    ctx.fillStyle = "White";
     var totalLeaves = Math.floor(getRandomArbitrary(minLeaves, maxLeaves));
     for (let i = 0; i < totalLeaves; i++) {
         let start = [currentPoint[0] + getRandomArbitrary(-1 * 40, 40), currentPoint[1] + getRandomArbitrary(-1 * 40, 40)];
@@ -233,7 +243,7 @@ function drawTree(){
     treePoints.completeBranches = treePoints.branchNumber;
     //DRAW TREE PATH
     for (let i = 0; i < treePoints.branchNumber; i++) {
-        // ctx.strokeStyle = "#2a1705";
+        ctx.strokeStyle = "Black";
         let currentBranchWidth = 0;
         for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
             ctx.beginPath();
@@ -272,10 +282,9 @@ function drawTree(){
     }
     //DRAW LEAVES
     for (let i = 0; i < treePoints.leaves.length; i++) {
-        // ctx.strokeStyle = "#11551e";
-        // ctx.fillStyle = "#11551e";
+        ctx.strokeStyle = "Black";
         let leaf = treePoints.leaves[i];
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(leaf[0][0], leaf[0][1]);
         ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
@@ -292,12 +301,46 @@ function drawTree(){
 
     trees.push(treePoints);
 }
-
+// DRAW TREES
 for (let i = 0; i < treeNumbers; i++) {
     drawTree();
 }
-for (let i = 0; i < Math.floor(getRandomArbitrary(200, 500)); i++) {
-    addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
+function treeCanvas() {
+    ctx.clearRect(0, 0, canvas.width + 100, canvas.height + 100);
+    drawTree();
 }
+//DRAW GRASS
+// for (let i = 0; i < Math.floor(getRandomArbitrary(100, 300)); i++) {
+//     addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
+// }
 
-console.log(trees);
+//PIXELATE CANVAS
+function pixelateCanvas() {
+    var canvasWidth = canvas.width;
+    var canvasHeight = canvas.height;
+    var chunksX = Math.floor(canvasWidth / pixelSize);
+    var chunksY = Math.floor(canvasHeight / pixelSize);
+    for (let r = 0; r < chunksY; r++) {
+        for (let i = 0; i < chunksX; i++) {
+            let canDraw = true;
+            let blackCount = 0;
+            // console.log((i * pixelSize) + " " + (r * pixelSize));
+            let middleX = Math.floor(((i * pixelSize) + ((i * pixelSize) + pixelSize)) / 2);
+            let middleY = Math.floor(((r * pixelSize) + ((r * pixelSize) + pixelSize)) / 2);
+            let color = getColorAtCoordinate(middleX, middleY);
+            console.log(color);
+            if(color[3] == 0){
+                canDraw = false;
+            }
+
+            if(canDraw){
+                ctx.fillStyle = "Black";
+            }else{
+                ctx.fillStyle = "White";
+            }
+            ctx.beginPath();
+            ctx.rect(i * pixelSize, r * pixelSize, pixelSize, pixelSize)
+            ctx.fill();
+        }
+    }
+}
