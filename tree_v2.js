@@ -21,6 +21,15 @@ var treePoints = {
     "completeBranches": 0,
     "highestY": 99999
 };
+var colorPoints = [];
+var shadowLevels = 4;
+var shadows = [];
+var lightPoint = [canvas.width, 0];
+
+for (let i = 0; i < shadowLevels; i++) {
+    shadows.push("rgba(0, 0, 0, " + ((1 / (shadowLevels * 2)) * (i + 1)) + ")");
+}
+console.log(shadows);
 
 function getRandomGreen() {
     let green = Math.floor(Math.random() * 256);
@@ -113,6 +122,25 @@ function getNextPoint(canvas, currentPoint, maxLength, maxAngle, hasScaler = tru
     var y = currentPoint[1] - (length * Math.sin(angle * (Math.PI / 180)));
     return [x, y];
 }
+function getPointGivenTwo(point1, point2, desiredDistance){
+    // Example arrays holding the x and y values of the original points
+    var originalX = [point1[0], point2[0]];
+    var originalY = [point1[1], point2[1]];
+
+    // Calculate the distance between the two original points using the Pythagorean theorem
+    var dx = originalX[1] - originalX[0];
+    var dy = originalY[1] - originalY[0];
+    var totalDistance = Math.sqrt(dx ** 2 + dy ** 2);
+
+    // Calculate the ratio of the desired distance to the total distance
+    var ratio = desiredDistance / totalDistance;
+
+    // Calculate the x and y coordinates of the desired point
+    var desiredX = originalX[0] + (dx * ratio);
+    var desiredY = originalY[0] + (dy * ratio);
+
+    return [desiredX, desiredY];
+}
 function addBranch(treePoints, base = true, currentPoint = []){
     treePoints.branchNumber += 1;
     var index = "branch_" + treePoints.branchNumber;
@@ -151,7 +179,7 @@ function addOnBranch(treePoints, branchIndex, length, angle){
     treePoints.branches[branchIndex].push(nextPoint);
 }
 function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves = 5, maxLeaves = 15){
-    ctx.fillStyle = "White";
+    ctx.fillStyle = "Green";
     var totalLeaves = Math.floor(getRandomArbitrary(minLeaves, maxLeaves));
     for (let i = 0; i < totalLeaves; i++) {
         let start = [currentPoint[0] + getRandomArbitrary(-1 * 40, 40), currentPoint[1] + getRandomArbitrary(-1 * 40, 40)];
@@ -243,8 +271,6 @@ function drawTree(){
     treePoints.completeBranches = treePoints.branchNumber;
     //DRAW TREE PATH
     for (let i = 0; i < treePoints.branchNumber; i++) {
-        ctx.strokeStyle = "Black";
-        let currentBranchWidth = 0;
         for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
             ctx.beginPath();
             if(r == 0){
@@ -281,41 +307,52 @@ function drawTree(){
         }
     }
     //DRAW LEAVES
-    for (let i = 0; i < treePoints.leaves.length; i++) {
-        ctx.strokeStyle = "Black";
-        let leaf = treePoints.leaves[i];
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(leaf[0][0], leaf[0][1]);
-        ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(leaf[0][0], leaf[0][1]);
-        ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.fill();
-    }
-
+    // ctx.strokeStyle = "Green";
+    // ctx.fillStyle = "Green";
+    // for (let i = 0; i < treePoints.leaves.length; i++) {
+    //     let leaf = treePoints.leaves[i];
+    //     ctx.lineWidth = 2;
+    //     ctx.beginPath();
+    //     ctx.moveTo(leaf[0][0], leaf[0][1]);
+    //     ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
+    //     ctx.stroke();
+    //     ctx.closePath();
+    //     ctx.fill();
+    //     ctx.beginPath();
+    //     ctx.moveTo(leaf[0][0], leaf[0][1]);
+    //     ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
+    //     ctx.stroke();
+    //     ctx.closePath();
+    //     ctx.fill();
+    // }
+    ctx.strokeStyle = "Black";
+    ctx.fillStyle = "Black";
     trees.push(treePoints);
 }
 // DRAW TREES
 for (let i = 0; i < treeNumbers; i++) {
+    ctx.strokeStyle = "Brown";
+    ctx.fillStyle = "Brown";
     drawTree();
+    ctx.strokeStyle = "Black";
+    ctx.fillStyle = "Black";
 }
 function treeCanvas() {
     ctx.clearRect(0, 0, canvas.width + 100, canvas.height + 100);
+    ctx.strokeStyle = "Brown";
+    ctx.fillStyle = "Brown";
     drawTree();
+    ctx.strokeStyle = "Black";
+    ctx.fillStyle = "Black";
 }
 //DRAW GRASS
-// for (let i = 0; i < Math.floor(getRandomArbitrary(100, 300)); i++) {
-//     addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
-// }
+for (let i = 0; i < Math.floor(getRandomArbitrary(200, 500)); i++) {
+    addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
+}
 
 //PIXELATE CANVAS
 function pixelateCanvas() {
+    colorPoints = [];
     var canvasWidth = canvas.width;
     var canvasHeight = canvas.height;
     var chunksX = Math.floor(canvasWidth / pixelSize);
@@ -328,13 +365,13 @@ function pixelateCanvas() {
             let middleX = Math.floor(((i * pixelSize) + ((i * pixelSize) + pixelSize)) / 2);
             let middleY = Math.floor(((r * pixelSize) + ((r * pixelSize) + pixelSize)) / 2);
             let color = getColorAtCoordinate(middleX, middleY);
-            console.log(color);
             if(color[3] == 0){
                 canDraw = false;
             }
 
             if(canDraw){
-                ctx.fillStyle = "Black";
+                colorPoints.push([(i * pixelSize), (r * pixelSize)]);
+                ctx.fillStyle = "rgb(" + color[0] + ", " + color[1] + ", " + color[2] + ")";
             }else{
                 ctx.fillStyle = "White";
             }
@@ -342,5 +379,11 @@ function pixelateCanvas() {
             ctx.rect(i * pixelSize, r * pixelSize, pixelSize, pixelSize)
             ctx.fill();
         }
+    }
+    console.log(colorPoints);
+}
+function addShadow() {
+    for (let i = 0; i < colorPoints.length; i++) {
+        
     }
 }
