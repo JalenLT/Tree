@@ -381,20 +381,34 @@ function pixelateCanvas() {
         }
     }
 }
-function addShadow() {
+function addShadow(checkDistance) {
     for (let i = 0; i < colorPoints.length; i++) {
-        
+        console.log(i);
+        let baseColor = getColorAtCoordinate(colorPoints[i][0], colorPoints[i][1]);
+        let depth = -1;
+        for (let r = 0; r < shadowLevels; r++) {
+            let thirdPoint = getPointGivenTwo(colorPoints[i], lightPoint, checkDistance * (r + 1));
+            let color = getColorAtCoordinate(thirdPoint[0], thirdPoint[1]);
+            if (color[0] == baseColor[0] && color[1] == baseColor[1] && color[2] == baseColor[2]){
+                depth = depth + 1;
+            }
+        }
+        if(depth != -1){
+            ctx.fillStyle = shadows[depth];
+            ctx.beginPath();
+            ctx.rect(colorPoints[i][0], colorPoints[i][1], pixelSize, pixelSize);
+            ctx.fill();
+        }
     }
 }
 
-var thirdPoint = getPointGivenTwo([10, 200], [100, 500], 10);
-ctx.beginPath();
-ctx.rect(10, 200, 3, 3);
-ctx.fill();
-ctx.beginPath();
-ctx.rect(100, 500, 3, 3);
-ctx.fill();
-ctx.beginPath();
-ctx.rect(thirdPoint[0], thirdPoint[1], 3, 3);
-ctx.fill();
-console.log(thirdPoint);
+// var thirdPoint = getPointGivenTwo([10, 200], [100, 500], 10);
+// ctx.beginPath();
+// ctx.rect(10, 200, 3, 3);
+// ctx.fill();
+// ctx.beginPath();
+// ctx.rect(100, 500, 3, 3);
+// ctx.fill();
+// ctx.beginPath();
+// ctx.rect(thirdPoint[0], thirdPoint[1], 3, 3);
+// ctx.fill();
