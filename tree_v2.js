@@ -380,10 +380,21 @@ function pixelateCanvas() {
             ctx.fill();
         }
     }
-    console.log(colorPoints);
 }
 function addShadow() {
     for (let i = 0; i < colorPoints.length; i++) {
         
     }
 }
+
+var thirdPoint = getPointGivenTwo([10, 200], [100, 500], 10);
+ctx.beginPath();
+ctx.rect(10, 200, 3, 3);
+ctx.fill();
+ctx.beginPath();
+ctx.rect(100, 500, 3, 3);
+ctx.fill();
+ctx.beginPath();
+ctx.rect(thirdPoint[0], thirdPoint[1], 3, 3);
+ctx.fill();
+console.log(thirdPoint);
