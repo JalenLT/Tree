@@ -10,7 +10,7 @@ var mainLength = 100;
 var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
-var pixelSize = 3;
+var pixelSize = 5;
 var treeNumbers = Math.floor(getRandomArbitrary(1, 2));
 var trees = [];
 var treePoints = {
@@ -22,7 +22,7 @@ var treePoints = {
     "highestY": 99999
 };
 var colorPoints = [];
-var shadowLevels = 4;
+var shadowLevels = 2;
 var shadows = [];
 var shadowPoints = {};
 var lightPoint = [10, 10];
