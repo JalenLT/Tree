@@ -10,7 +10,7 @@ var mainLength = 100;
 var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
-var pixelSize = 5;
+var pixelSize = 3;
 var treeNumbers = Math.floor(getRandomArbitrary(1, 2));
 var trees = [];
 var treePoints = {
@@ -24,8 +24,18 @@ var treePoints = {
 var colorPoints = [];
 var shadowLevels = 4;
 var shadows = [];
-var lightPoint = [canvas.width, 0];
+var shadowPoints = {};
+var lightPoint = [10, 10];
 
+//DRAW SUN
+const radius = 50;
+ctx.strokeStyle = "Yellow";
+ctx.beginPath();
+ctx.arc(lightPoint[0], lightPoint[1], radius, 0, 2 * Math.PI);
+ctx.stroke();
+ctx.fillStyle = "Black";
+
+//CALCULATE SHADOWS
 for (let i = 0; i < shadowLevels; i++) {
     shadows.push("rgba(0, 0, 0, " + ((1 / (shadowLevels * 2)) * (i + 1)) + ")");
 }
@@ -307,24 +317,24 @@ function drawTree(){
         }
     }
     //DRAW LEAVES
-    // ctx.strokeStyle = "Green";
-    // ctx.fillStyle = "Green";
-    // for (let i = 0; i < treePoints.leaves.length; i++) {
-    //     let leaf = treePoints.leaves[i];
-    //     ctx.lineWidth = 2;
-    //     ctx.beginPath();
-    //     ctx.moveTo(leaf[0][0], leaf[0][1]);
-    //     ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
-    //     ctx.stroke();
-    //     ctx.closePath();
-    //     ctx.fill();
-    //     ctx.beginPath();
-    //     ctx.moveTo(leaf[0][0], leaf[0][1]);
-    //     ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
-    //     ctx.stroke();
-    //     ctx.closePath();
-    //     ctx.fill();
-    // }
+    ctx.strokeStyle = "Green";
+    ctx.fillStyle = "Green";
+    for (let i = 0; i < treePoints.leaves.length; i++) {
+        let leaf = treePoints.leaves[i];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(leaf[0][0], leaf[0][1]);
+        ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(leaf[0][0], leaf[0][1]);
+        ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+    }
     ctx.strokeStyle = "Black";
     ctx.fillStyle = "Black";
     trees.push(treePoints);
@@ -382,8 +392,8 @@ function pixelateCanvas() {
     }
 }
 function addShadow(checkDistance) {
+    shadowPoints["length"] = colorPoints.length;
     for (let i = 0; i < colorPoints.length; i++) {
-        console.log(i);
         let baseColor = getColorAtCoordinate(colorPoints[i][0], colorPoints[i][1]);
         let depth = -1;
         for (let r = 0; r < shadowLevels; r++) {
@@ -394,21 +404,16 @@ function addShadow(checkDistance) {
             }
         }
         if(depth != -1){
-            ctx.fillStyle = shadows[depth];
+            shadowPoints[i] = {"point": colorPoints[i], "depth": depth};
+        }
+    }
+    for (let i = 0; i < shadowPoints["length"]; i++) {
+        if(shadowPoints[i]){
+            ctx.fillStyle = shadows[shadowPoints[i]["depth"]];
             ctx.beginPath();
-            ctx.rect(colorPoints[i][0], colorPoints[i][1], pixelSize, pixelSize);
+            ctx.rect(shadowPoints[i]["point"][0], shadowPoints[i]["point"][1], pixelSize, pixelSize);
             ctx.fill();
         }
     }
 }
-
-// var thirdPoint = getPointGivenTwo([10, 200], [100, 500], 10);
-// ctx.beginPath();
-// ctx.rect(10, 200, 3, 3);
-// ctx.fill();
-// ctx.beginPath();
-// ctx.rect(100, 500, 3, 3);
-// ctx.fill();
-// ctx.beginPath();
-// ctx.rect(thirdPoint[0], thirdPoint[1], 3, 3);
-// ctx.fill();
+console.log(treePoints);
