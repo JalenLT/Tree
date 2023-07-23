@@ -1,17 +1,17 @@
 //GET HTML ELEMENTS
 const canvas = document.getElementsByName("tree")[0];
-canvas.width = window.innerWidth * 0.75;
+canvas.width = 1920;
+canvas.height = 1080;
 const ctx = canvas.getContext("2d", {willReadFrequently: true});
 ctx.lineCap = "round";
-// ctx.lineJoin = "round";
 var lineWidth = 30;
 ctx.lineWidth = lineWidth;
 var mainLength = 100;
 var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
-var pixelSize = 5;
-var treeNumbers = Math.floor(getRandomArbitrary(1, 2));
+var pixelSize = 8;
+var treeNumbers = Math.floor(getRandomArbitrary(1, 4));
 var trees = [];
 var treePoints = {
     "branches" : {},
@@ -24,22 +24,29 @@ var treePoints = {
 var colorPoints = [];
 var shadowLevels = 2;
 var shadows = [];
+var lights = [];
 var shadowPoints = {};
 var lightPoint = [10, 10];
+var lightLevels = 2;
+var lightColor = "rgba(255, 255, 255, 0.8)";
+var lightPoints = {};
+var skyColor = "rgb(179, 230, 255)";
 
-//DRAW SUN
-const radius = 50;
-ctx.strokeStyle = "Yellow";
-ctx.beginPath();
-ctx.arc(lightPoint[0], lightPoint[1], radius, 0, 2 * Math.PI);
-ctx.stroke();
-ctx.fillStyle = "Black";
+//DRAW SKY
+ctx.fillStyle = skyColor;
+ctx.rect(0, 0, canvas.width, canvas.height);
+ctx.fill();
+ctx.fillStyle = "White";
 
 //CALCULATE SHADOWS
 for (let i = 0; i < shadowLevels; i++) {
     shadows.push("rgba(0, 0, 0, " + ((1 / (shadowLevels * 2)) * (i + 1)) + ")");
 }
-console.log(shadows);
+
+//CALCULATE LIGHT
+for (let i = 0; i < lightLevels; i++) {
+    lights.push("rgba(255, 255, 255, " + ((1 / (lightLevels * 2)) * (i + 1)) + ")");
+}
 
 function getRandomGreen() {
     let green = Math.floor(Math.random() * 256);
@@ -105,7 +112,7 @@ function distanceBetweenPoints(point1, point2){
     return Math.sqrt(Math.pow((point2[0] - point1[0]), 2) + Math.pow((point2[1] - point1[1]), 2));
 }
 function getBase(canvas){
-    return [Math.floor(getRandomArbitrary(1, canvas.width)), canvas.height];
+    return [Math.floor(getRandomArbitrary(0, canvas.width)), canvas.height];
 }
 function getNextPoint(canvas, currentPoint, maxLength, maxAngle, hasScaler = true, up = false){
     var length = maxLength;
@@ -201,6 +208,7 @@ function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves 
     }
 }
 function addGrass(canvas, length, angle){
+    ctx.fillStyle = "rgb(150, 255, 51)";
     ctx.lineWidth = 1;
     if(0.8 < Math.random()){
         var startPoint1 = [trees[Math.floor(getRandomArbitrary(0, trees.length - 1))]["branches"]["branch_1"][0][0] + getRandomArbitrary(-100, 100), trees[Math.floor(getRandomArbitrary(0, trees.length - 1))]["branches"]["branch_1"][0][1]];
@@ -221,6 +229,7 @@ function addGrass(canvas, length, angle){
     );
     ctx.stroke();
     ctx.fill();
+    ctx.fillStyle = "Black";
 }
 
 function drawTree(){
@@ -339,6 +348,7 @@ function drawTree(){
     ctx.fillStyle = "Black";
     trees.push(treePoints);
 }
+
 // DRAW TREES
 for (let i = 0; i < treeNumbers; i++) {
     ctx.strokeStyle = "Brown";
@@ -375,7 +385,8 @@ function pixelateCanvas() {
             let middleX = Math.floor(((i * pixelSize) + ((i * pixelSize) + pixelSize)) / 2);
             let middleY = Math.floor(((r * pixelSize) + ((r * pixelSize) + pixelSize)) / 2);
             let color = getColorAtCoordinate(middleX, middleY);
-            if(color[3] == 0){
+            let colorRGB = "rgb(" + color[0] + ", " + color[1] + ", " + color[2] + ")";
+            if(colorRGB == skyColor){
                 canDraw = false;
             }
 
@@ -383,7 +394,7 @@ function pixelateCanvas() {
                 colorPoints.push([(i * pixelSize), (r * pixelSize)]);
                 ctx.fillStyle = "rgb(" + color[0] + ", " + color[1] + ", " + color[2] + ")";
             }else{
-                ctx.fillStyle = "White";
+                ctx.fillStyle = skyColor;
             }
             ctx.beginPath();
             ctx.rect(i * pixelSize, r * pixelSize, pixelSize, pixelSize)
@@ -416,4 +427,35 @@ function addShadow(checkDistance) {
         }
     }
 }
-console.log(treePoints);
+
+function addLight(lightDistance = -5){
+    lightPoints["length"] = colorPoints.length;
+    for (let i = 0; i < colorPoints.length; i++) {
+        let baseColor = getColorAtCoordinate(colorPoints[i][0], colorPoints[i][1]);
+        let depth = -1;
+        for (let r = 0; r < lightLevels; r++) {
+            let thirdPoint = getPointGivenTwo(colorPoints[i], lightPoint, lightDistance * (r + 1));
+            let color = getColorAtCoordinate(thirdPoint[0], thirdPoint[1]);
+            if (color[0] == baseColor[0] && color[1] == baseColor[1] && color[2] == baseColor[2]){
+                depth = depth + 1;
+            }
+        }
+        if(depth != -1){
+            lightPoints[i] = {"point": colorPoints[i], "depth": depth};
+        }
+    }
+    for (let i = 0; i < lightPoints["length"]; i++) {
+        if(lightPoints[i]){
+            ctx.fillStyle = lights[lightPoints[i]["depth"]];
+            ctx.beginPath();
+            ctx.rect(lightPoints[i]["point"][0], lightPoints[i]["point"][1], pixelSize, pixelSize);
+            ctx.fill();
+        }
+    }
+}
+
+
+//PIXELATE TREE AND ADD LIGHT AND SHADOW BY DEFAULT
+pixelateCanvas();
+addLight(-200);
+addShadow(15);
