@@ -2,6 +2,9 @@
 
 This is a JavaScript script that generates a tree with lights and shadows on an HTML canvas.
 
+## Result
+![Tree 11](https://github.com/JalenLT/Tree/assets/127210112/f8a45340-94b5-4add-bf25-c411985fb085)
+
 ## Getting Started
 
 To use this script, you need an HTML file with a canvas element named "tree" on which the tree will be drawn. Make sure to adjust the canvas dimensions according to your requirements.
