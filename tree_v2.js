@@ -11,7 +11,8 @@ var mainAngle = 20;
 var mainPoints = 30;
 var splitChance = 30;
 var pixelSize = 8;
-var treeNumbers = Math.floor(getRandomArbitrary(1, 4));
+// var treeNumbers = Math.floor(getRandomArbitrary(1, 4));
+var treeNumbers = 1;
 var trees = [];
 var treePoints = {
     "branches" : {},
@@ -28,9 +29,11 @@ var lights = [];
 var shadowPoints = {};
 var lightPoint = [10, 10];
 var lightLevels = 2;
-var lightColor = "rgba(255, 255, 255, 0.8)";
+var lightColor = [255, 255, 255];
 var lightPoints = {};
 var skyColor = "rgb(179, 230, 255)";
+var leafColor = "Pink";
+var barkColor = "rgba(80, 47, 22, 1)";
 
 //DRAW SKY
 ctx.fillStyle = skyColor;
@@ -45,7 +48,7 @@ for (let i = 0; i < shadowLevels; i++) {
 
 //CALCULATE LIGHT
 for (let i = 0; i < lightLevels; i++) {
-    lights.push("rgba(255, 255, 255, " + ((1 / (lightLevels * 2)) * (i + 1)) + ")");
+    lights.push("rgba(" + lightColor[0] + ", " + lightColor[1] + ", " + lightColor[2] + ", " + ((1 / (lightLevels * 2)) * (i + 1)) + ")");
 }
 
 function getRandomGreen() {
@@ -74,14 +77,13 @@ function getPerpendicularPoint(startPoint, endPoint, distance) {
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
-// Get the color of a specific coordinate
 function getColorAtCoordinate(x, y) {
     // Get the image data of the canvas
     const imageData = ctx.getImageData(x, y, 1, 1);
     const data = imageData.data;
     // Return the color as an RGB string
     return data;
-  }
+}
 function getControlPoints(startPoint, endPoint, curvature = 10) {
     // Calculate the mid-point
     var midPoint = {
@@ -195,8 +197,8 @@ function addOnBranch(treePoints, branchIndex, length, angle){
     }
     treePoints.branches[branchIndex].push(nextPoint);
 }
-function addLeaves(treePoints, currentPoint, length, angle, distance, minLeaves = 5, maxLeaves = 15){
-    ctx.fillStyle = "Green";
+function addLeaves(treePoints, currentPoint, color, angle, distance, minLeaves = 5, maxLeaves = 15){
+    ctx.fillStyle = color;
     var totalLeaves = Math.floor(getRandomArbitrary(minLeaves, maxLeaves));
     for (let i = 0; i < totalLeaves; i++) {
         let start = [currentPoint[0] + getRandomArbitrary(-1 * 40, 40), currentPoint[1] + getRandomArbitrary(-1 * 40, 40)];
@@ -231,7 +233,6 @@ function addGrass(canvas, length, angle){
     ctx.fill();
     ctx.fillStyle = "Black";
 }
-
 function drawTree(){
     treePoints = {
         "branches" : {},
@@ -255,7 +256,7 @@ function drawTree(){
         }
         if((i / mainPoints) > branchHeight){
             //ADD LEAVES
-            addLeaves(treePoints, treePoints.branches["branch_1"][treePoints.branches["branch_1"].length - 1], mainLength / 8, mainAngle, 5);
+            addLeaves(treePoints, treePoints.branches["branch_1"][treePoints.branches["branch_1"].length - 1], leafColor, mainAngle, 5);
         }
     }
     treePoints.completeBranches += 1;
@@ -266,7 +267,7 @@ function drawTree(){
         if(i + 1 != 1){
             for (let r = 0; r < splitCount; r++) {
                 //ADD LEAVES
-                addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], mainLength / 8, mainAngle, 5);
+                addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], leafColor, mainAngle, 5);
     
                 addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.6, mainAngle * 1.5);
                 var branchChance = Math.floor(getRandomArbitrary(1, 100));
@@ -281,7 +282,7 @@ function drawTree(){
     for (let i = treePoints.completeBranches; i < treePoints.branchNumber; i++) {
         for (let r = 0; r < splitCount; r++) {
             //ADD LEAVES
-            addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], mainLength / 8, mainAngle, 5);
+            addLeaves(treePoints, treePoints.branches["branch_" + (i + 1)][treePoints.branches["branch_" + (i + 1)].length - 1], leafColor, mainAngle, 5);
             
             addOnBranch(treePoints, "branch_" + (i + 1), mainLength * 0.3, mainAngle * 2);
             var branchChance = Math.floor(getRandomArbitrary(1, 100));
@@ -326,8 +327,8 @@ function drawTree(){
         }
     }
     //DRAW LEAVES
-    ctx.strokeStyle = "Green";
-    ctx.fillStyle = "Green";
+    ctx.strokeStyle = leafColor;
+    ctx.fillStyle = leafColor;
     for (let i = 0; i < treePoints.leaves.length; i++) {
         let leaf = treePoints.leaves[i];
         ctx.lineWidth = 2;
@@ -348,29 +349,76 @@ function drawTree(){
     ctx.fillStyle = "Black";
     trees.push(treePoints);
 }
-
-// DRAW TREES
-for (let i = 0; i < treeNumbers; i++) {
-    ctx.strokeStyle = "Brown";
-    ctx.fillStyle = "Brown";
-    drawTree();
-    ctx.strokeStyle = "Black";
-    ctx.fillStyle = "Black";
-}
-function treeCanvas() {
+function renderTree(treePoints){
+    colorPoints = [];
+    lightPoints = {};
+    shadowPoints = {};
     ctx.clearRect(0, 0, canvas.width + 100, canvas.height + 100);
-    ctx.strokeStyle = "Brown";
-    ctx.fillStyle = "Brown";
-    drawTree();
+    ctx.fillStyle = skyColor;
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.fill();
+    ctx.strokeStyle = barkColor;
+    ctx.fillStyle = barkColor;
+    lineWidth = 30;
+    for (let i = 0; i < treePoints.branchNumber; i++) {
+        for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
+            ctx.beginPath();
+            if(r == 0){
+                ctx.moveTo(treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1]);
+            }else{
+                ctx.moveTo(treePoints.branches["branch_" + (i + 1)][r - 1][0], treePoints.branches["branch_" + (i + 1)][r - 1][1]);
+                let controlPoints = getControlPoints(treePoints.branches["branch_" + (i + 1)][r - 1], treePoints.branches["branch_" + (i + 1)][r]);
+                ctx.bezierCurveTo(
+                    controlPoints[0][0], controlPoints[0][1],
+                    controlPoints[1][0], controlPoints[1][1],
+                    treePoints.branches["branch_" + (i + 1)][r][0], 
+                    treePoints.branches["branch_" + (i + 1)][r][1]
+                );
+            }
+            
+            if(i == 0){
+                let w = lineWidth * (1 - ((r + 1) / treePoints.branches["branch_" + (i + 1)].length));
+                ctx.lineWidth = w;
+            }else{
+                let currentBranchWidth = 0;
+                treePoints["lineWidths"].forEach((element, index) => {
+                    if(treePoints.branches["branch_" + (i + 1)][r][0] == element[0] && treePoints.branches["branch_" + (i + 1)][r][1] == element[1]){
+                        currentBranchWidth = element[2];
+                    }
+                });
+
+                ctx.lineWidth = currentBranchWidth;
+            }
+            
+            ctx.stroke();
+        }
+    }
+    //DRAW LEAVES
+    ctx.strokeStyle = leafColor;
+    ctx.fillStyle = leafColor;
+    for (let i = 0; i < treePoints.leaves.length; i++) {
+        let leaf = treePoints.leaves[i];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(leaf[0][0], leaf[0][1]);
+        ctx.quadraticCurveTo(leaf[2][0], leaf[2][1], leaf[1][0], leaf[1][1]);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(leaf[0][0], leaf[0][1]);
+        ctx.quadraticCurveTo(leaf[3][0], leaf[3][1], leaf[1][0], leaf[1][1]);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+    }
     ctx.strokeStyle = "Black";
     ctx.fillStyle = "Black";
-}
-//DRAW GRASS
-for (let i = 0; i < Math.floor(getRandomArbitrary(200, 500)); i++) {
-    addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
-}
 
-//PIXELATE CANVAS
+    pixelateCanvas();
+    addLight(-200);
+    addShadow(15);
+}
 function pixelateCanvas() {
     colorPoints = [];
     var canvasWidth = canvas.width;
@@ -381,7 +429,6 @@ function pixelateCanvas() {
         for (let i = 0; i < chunksX; i++) {
             let canDraw = true;
             let blackCount = 0;
-            // console.log((i * pixelSize) + " " + (r * pixelSize));
             let middleX = Math.floor(((i * pixelSize) + ((i * pixelSize) + pixelSize)) / 2);
             let middleY = Math.floor(((r * pixelSize) + ((r * pixelSize) + pixelSize)) / 2);
             let color = getColorAtCoordinate(middleX, middleY);
@@ -427,7 +474,6 @@ function addShadow(checkDistance) {
         }
     }
 }
-
 function addLight(lightDistance = -5){
     lightPoints["length"] = colorPoints.length;
     for (let i = 0; i < colorPoints.length; i++) {
@@ -453,7 +499,169 @@ function addLight(lightDistance = -5){
         }
     }
 }
+function treeCanvas() {
+    ctx.clearRect(0, 0, canvas.width + 100, canvas.height + 100);
+    ctx.strokeStyle = barkColor;
+    ctx.fillStyle = barkColor;
+    drawTree();
+    ctx.strokeStyle = "Black";
+    ctx.fillStyle = "Black";
+}
+function refresh(){
+    colorPoints = [];
+    lightPoints = {};
+    shadowPoints = {};
+    ctx.clearRect(0, 0, canvas.width + 100, canvas.height + 100);
+    ctx.fillStyle = skyColor;
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.fill();
+    ctx.fillStyle = "White";
+    for (let i = 0; i < treeNumbers; i++) {
+        ctx.strokeStyle = barkColor;
+        ctx.fillStyle = barkColor;
+        drawTree();
+        ctx.strokeStyle = "Black";
+        ctx.fillStyle = "Black";
+    }
+    for (let i = 0; i < Math.floor(getRandomArbitrary(200, 500)); i++) {
+        addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
+    }
+    pixelateCanvas();
+    addLight(-200);
+    addShadow(15);
+}
+function moveInDirection(x, y, direction, distance) {
+    // Calculate the new x and y coordinates
+    const newX = x + (direction[0] * distance);
+    const newY = y + (direction[1] * distance);
 
+    return [newX, newY];
+}
+
+// DRAW TREES
+for (let i = 0; i < treeNumbers; i++) {
+    ctx.strokeStyle = barkColor;
+    ctx.fillStyle = barkColor;
+    drawTree();
+    ctx.strokeStyle = "Black";
+    ctx.fillStyle = "Black";
+}
+
+//DRAW GRASS
+for (let i = 0; i < Math.floor(getRandomArbitrary(200, 500)); i++) {
+    addGrass(canvas, Math.floor(getRandomArbitrary(20, 180)), 40);
+}
+
+function moveTree(windDirection = [1, 0], windStrength = 12){
+    for (let i = 0; i < treePoints.leaves.length; i++) {
+        let start = moveInDirection(treePoints.leaves[i][0][0], treePoints.leaves[i][0][1], windDirection, Math.floor(getRandomArbitrary(1, windStrength)));
+        let end = moveInDirection(treePoints.leaves[i][1][0], treePoints.leaves[i][1][1], windDirection, Math.floor(getRandomArbitrary(1, windStrength)));
+        let control1 = getPerpendicularPoint(start, end, 5);
+        let control2 = getPerpendicularPoint(start, end, -1 * 5);
+        let middle = getPerpendicularPoint(start, end, 0.1);
+        treePoints.leaves[i] = [start, end, control1, control2, middle];
+    }
+    //LOOP THROUGH ALL POINTS IN ALL BRANCHES
+    let canStartMoving = false;
+    for (let i = 0; i < treePoints.branchNumber; i++) {
+        for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
+            //CHECK FOR FIRST OCCURENCE OF A SPLIT
+            if(i == 0){
+                if(treePoints.branches["branch_" + (i + 1)][r][0] == treePoints.branches["branch_" + (i + 2)][0][0] && treePoints.branches["branch_" + (i + 1)][r][1] == treePoints.branches["branch_" + (i + 2)][0][1]){
+                    canStartMoving = true;
+                }
+                if(canStartMoving){
+                    //CALCULATE HOW FAR THE CURRENT POINT WILL MOVE
+                    let scaler = (r + 1) / treePoints.branches["branch_" + (i + 1)].length;
+                    let moveStrength = windStrength * scaler;
+                    let nextPointPosition = moveInDirection(treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], windDirection, moveStrength);
+                    
+                    //FIND BRANCH THAT HAS THE SAME START AS THIS POINT
+                    for (let a = 0; a < treePoints.branchNumber; a++) {
+                        if(a != i){
+                            if(treePoints.branches["branch_" + (a + 1)][0][0] == treePoints.branches["branch_" + (i + 1)][r][0] && treePoints.branches["branch_" + (a + 1)][0][1] == treePoints.branches["branch_" + (i + 1)][r][1]){
+                                //LOOP THROUGH ALL POINTS IN THIS BRANCH
+                                for (let v = 0; v < treePoints.branches["branch_" + (a + 1)].length; v++) {
+                                    let subNextPointPosition = moveInDirection(treePoints.branches["branch_" + (a + 1)][v][0], treePoints.branches["branch_" + (a + 1)][v][1], windDirection, moveStrength);
+
+                                    //LOOP THROUGH THE LINE WIDTHS ARRAY AND UPDATE THE VALUES THERE
+                                    for (let u = 0; u < treePoints.lineWidths.length; u++) {
+                                        if(treePoints.lineWidths[u][0] == treePoints.branches["branch_" + (a + 1)][v][0] && treePoints.lineWidths[u][1] == treePoints.branches["branch_" + (a + 1)][v][1]){
+                                            treePoints.lineWidths[u][0] = subNextPointPosition[0];
+                                            treePoints.lineWidths[u][1] = subNextPointPosition[1];
+                                        }
+                                    }
+
+                                    treePoints.branches["branch_" + (a + 1)][v] = subNextPointPosition;
+                                }
+                            }
+                        }
+                    }
+
+                    //LOOP THROUGH THE LINE WIDTHS ARRAY AND UPDATE THE VALUES THERE
+                    for (let u = 0; u < treePoints.lineWidths.length; u++) {
+                        if(treePoints.lineWidths[u][0] == treePoints.branches["branch_" + (i + 1)][r][0] && treePoints.lineWidths[u][1] == treePoints.branches["branch_" + (i + 1)][r][1]){
+                            treePoints.lineWidths[u][0] = nextPointPosition[0];
+                            treePoints.lineWidths[u][1] = nextPointPosition[1];
+                        }
+                    }
+
+                    //SET POINT POSITION
+                    treePoints.branches["branch_" + (i + 1)][r] = nextPointPosition;
+                }
+            }else{
+                //CALCULATE HOW FAR THE CURRENT POINT WILL MOVE
+                let scaler = (r + 1) / treePoints.branches["branch_" + (i + 1)].length;
+                let moveStrength = windStrength * scaler;
+                let nextPointPosition = moveInDirection(treePoints.branches["branch_" + (i + 1)][r][0], treePoints.branches["branch_" + (i + 1)][r][1], windDirection, moveStrength);
+                //FIND BRANCH THAT HAS THE SAME START AS THIS POINT
+                for (let a = 0; a < treePoints.branchNumber; a++) {
+                    if(a != i){
+                        if(treePoints.branches["branch_" + (a + 1)][0][0] == treePoints.branches["branch_" + (i + 1)][r][0] && treePoints.branches["branch_" + (a + 1)][0][1] == treePoints.branches["branch_" + (i + 1)][r][1]){
+                            //LOOP THROUGH ALL POINTS IN THIS BRANCH
+                            for (let v = 0; v < treePoints.branches["branch_" + (a + 1)].length; v++) {
+                                let subNextPointPosition = moveInDirection(treePoints.branches["branch_" + (a + 1)][v][0], treePoints.branches["branch_" + (a + 1)][v][1], windDirection, moveStrength);
+
+                                //LOOP THROUGH THE LINE WIDTHS ARRAY AND UPDATE THE VALUES THERE
+                                for (let u = 0; u < treePoints.lineWidths.length; u++) {
+                                    if(treePoints.lineWidths[u][0] == treePoints.branches["branch_" + (a + 1)][v][0] && treePoints.lineWidths[u][1] == treePoints.branches["branch_" + (a + 1)][v][1]){
+                                        treePoints.lineWidths[u][0] = subNextPointPosition[0];
+                                        treePoints.lineWidths[u][1] = subNextPointPosition[1];
+                                    }
+                                }
+
+                                treePoints.branches["branch_" + (a + 1)][v] = subNextPointPosition;
+                            }
+                        }
+                    }
+                }
+
+                //LOOP THROUGH THE LINE WIDTHS ARRAY AND UPDATE THE VALUES THERE
+                for (let u = 0; u < treePoints.lineWidths.length; u++) {
+                    if(treePoints.lineWidths[u][0] == treePoints.branches["branch_" + (i + 1)][r][0] && treePoints.lineWidths[u][1] == treePoints.branches["branch_" + (i + 1)][r][1]){
+                        treePoints.lineWidths[u][0] = nextPointPosition[0];
+                        treePoints.lineWidths[u][1] = nextPointPosition[1];
+                    }
+                }
+
+                //SET POINT POSITION
+                treePoints.branches["branch_" + (i + 1)][r] = nextPointPosition;
+            }
+        }
+    }
+
+    let changed = 0;
+    for (let i = 0; i < treePoints.branchNumber; i++) {
+        for (let r = 0; r < treePoints.branches["branch_" + (i + 1)].length; r++) {
+            for (let u = 0; u < treePoints.lineWidths.length; u++) {
+                if(treePoints.lineWidths[u][0] == treePoints.branches["branch_" + (i + 1)][r][0] && treePoints.lineWidths[u][1] == treePoints.branches["branch_" + (i + 1)][r][1]){
+                    changed = changed + 1;
+                }
+            }
+        }
+    }
+    renderTree(treePoints);
+}
 
 //PIXELATE TREE AND ADD LIGHT AND SHADOW BY DEFAULT
 pixelateCanvas();
